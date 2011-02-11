@@ -1,0 +1,56 @@
+#!/software/bin/perl
+
+# convert tped to bed
+
+use strict;
+use plink_binary;
+
+my $bed = shift;
+my $tped = shift;
+
+unless ($bed && $tped) {
+    print "Usage: $0 TPED_FILE BED_FILE\n";
+    exit(1);
+}
+
+open TPED, "< $tped.tped" or die $!;
+open TFAM, "< $tped.tfam" or die $!;
+
+my $folk = new plink_binary::vectorind;
+my $ind = new plink_binary::individual;
+
+while (<TFAM>) {
+    my ($family, $name, $father, $mother, $sex, $phen) = split;
+    $ind->{"family"} = $family;
+    $ind->{"name"} = $name;
+    $ind->{"father"} = $father;
+    $ind->{"mother"} = $mother;
+    $ind->{"sex"} = $sex;
+    $ind->{"phenotype"} = $phen;
+    $folk->push($ind);
+}
+close TFAM;
+
+my $pb = new plink_binary::plink_binary();
+$pb->open($bed, 1);
+$pb->{"individuals"} = $folk;
+$pb->{"missing_genotype"} = "0";
+
+while (<TPED>) {
+    my ($chrom, $id, $ppos, $gpos, @genotypes) = split;
+    my $snp = new plink_binary::snp;
+    $snp->{"chromosome"} = $chrom;
+    $snp->{"name"} = $id;
+    $snp->{"physical_position"} = $ppos;
+    $snp->{"genetic_position"} = $gpos;
+    my $genotypes = new plink_binary::vectorstr;
+    @genotypes = map { s{N}{0}g; $_ } @genotypes;
+    while (@genotypes) {
+        $genotypes->push(join "", splice @genotypes, 0, 2);
+    }
+    $pb->write_snp($snp, $genotypes);
+    $genotypes->clear();
+}
+$pb->close();
+
+close TPED;
