@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 void line_split(char *s, vector<string> &toks)
 {
     toks.resize(0);
-    char *p = strdup(s);
+    char *p = s;
     if (p[strlen(p) - 1] == '\n') p[strlen(p) - 1] = '\0';
 
     p = strtok(p, "\t");
