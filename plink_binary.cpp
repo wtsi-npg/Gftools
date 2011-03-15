@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // final '1' for snp major mode; only supporting this at present
 #define MAGIC_LEN 3
@@ -30,9 +32,9 @@ plink_binary::~plink_binary() {
 void plink_binary::close()
 {
     if (open_for_write) {
-        if (individuals.size() == 0) throw gftools::MalformedData("No individuals to write");
+        if (individuals.size() == 0) throw gftools::malformed_data("No individuals to write");
         write_fam(individuals);
-        if (snps.size() == 0) throw gftools::MalformedData("No SNPs to write");
+        if (snps.size() == 0) throw gftools::malformed_data("No SNPs to write");
         write_bim(snps);
         bed_file->close();
         delete bed_file;
@@ -65,17 +67,18 @@ void plink_binary::init(std::string dataset, bool mode)
     this->dataset = dataset;
     // default "NN" for no call
     missing_genotype = 'N';
+    quell_mem_mapping = false;
     if (mode) {
         open_for_write = 1;
         open_bed_write(dataset + ".bed");
     } else {
         open_for_write = 0;
         read_bim(snps);
-        if (snps.size() == 0) throw gftools::MalformedData("No SNPs read");
+        if (snps.size() == 0) throw gftools::malformed_data("No SNPs read");
         read_fam(individuals);
-        if (individuals.size() == 0) throw gftools::MalformedData("No individuals read");
+        if (individuals.size() == 0) throw gftools::malformed_data("No individuals read");
         bytes_per_snp = (3 + individuals.size()) / 4;
-        open_bed_read(dataset + ".bed");
+        open_bed_read(dataset + ".bed", quell_mem_mapping);
     }
 }
 
@@ -84,17 +87,17 @@ bool plink_binary::next_snp(gftools::snp &s, std::vector<std::string> &genotypes
     std::vector<int> gt_int;
     if (snp_ptr >= snps.size())
         return false;
-    bed_extract(3 + snp_ptr * bytes_per_snp, gt_int);
+    get_snp(3 + snp_ptr * bytes_per_snp, gt_int);
     genotypes_itoa(snps[snp_ptr], gt_int, genotypes);
     s = snps[snp_ptr++];
     return true;
 }
 
-void plink_binary::extract_snp(std::string snp, std::vector<std::string> &genotypes)
+void plink_binary::read_snp(std::string snp, std::vector<std::string> &genotypes)
 {
     std::vector<int> gt_int;
     int index = snp_index[snp];
-    bed_extract(3 + index * bytes_per_snp, gt_int);
+    read_snp(3 + index * bytes_per_snp, gt_int);
     genotypes_itoa(snps[index], gt_int, genotypes);
     snp_ptr = index + 1;
 }
@@ -113,7 +116,7 @@ void plink_binary::genotypes_itoa(gftools::snp s, std::vector<int> g_num, std::v
             case 1: genotype = s.allele_a + s.allele_a; break;
             case 2: genotype = s.allele_a + s.allele_b; break;
             case 3: genotype = s.allele_b + s.allele_b; break;
-            default: throw gftools::MalformedData("integer genotypes must be 0..3");
+            default: throw gftools::malformed_data("integer genotypes must be 0..3");
         }
         g_str.push_back(genotype);
     }
@@ -135,7 +138,7 @@ void plink_binary::genotypes_atoi(gftools::snp &s, std::vector<std::string> g_st
                 if (alleles.find(g_str[i].substr(1, 1)) == alleles.end())
                     alleles.insert(g_str[i].substr(1, 1));
                 if (g_str[i].length() != 2)
-                    throw gftools::MalformedData("Unrecognised genotype " + g_str[i]);
+                    throw gftools::malformed_data("Unrecognised genotype " + g_str[i]);
             }
         }
     }
@@ -150,7 +153,7 @@ void plink_binary::genotypes_atoi(gftools::snp &s, std::vector<std::string> g_st
         ss << "More than two alleles found for SNP " + s.name;
         for (unsigned int i = 0; i < labels.size(); i++)
             ss << " " << labels[i];
-        throw gftools::MalformedData(ss.str());
+        throw gftools::malformed_data(ss.str());
     }
     if (labels.size() == 0) {
         // no genotypes - return all no-calls
@@ -176,9 +179,9 @@ void plink_binary::genotypes_atoi(gftools::snp &s, std::vector<std::string> g_st
         g_num.push_back(lookup[g_str[i]]);
 }
 
-void plink_binary::extract_snp(int snp_index, std::vector<int> &genotypes)
+void plink_binary::read_snp(int snp_index, std::vector<int> &genotypes)
 {
-    bed_extract(3 + snp_index * bytes_per_snp, genotypes);
+    get_snp(3 + snp_index * bytes_per_snp, genotypes);
 }
 
 gftools::snp plink_binary::from_bim(std::string record) {
@@ -245,7 +248,7 @@ void plink_binary::read_bim(std::vector<gftools::snp> &snps)
     std::string fn = dataset + ".bim";
     file.open(fn.c_str());
     if (! file.is_open())
-        throw gftools::MalformedData("Missing bim file for " + dataset);
+        throw gftools::malformed_data("Missing bim file for " + dataset);
     std::string str;
     int i = 0;
 
@@ -276,7 +279,7 @@ void plink_binary::read_fam(std::vector<gftools::individual> &individuals)
     std::string fn = dataset + ".fam";
     file.open(fn.c_str());
     if (! file.is_open())
-        throw gftools::MalformedData("Missing fam file for " + dataset);
+        throw gftools::malformed_data("Missing fam file for " + dataset);
     std::string s;
     int i = 0;
 
@@ -302,18 +305,18 @@ void plink_binary::open_bed_write(std::string filename)
     write_bed_header();
 }
 
-void plink_binary::open_bed_read(std::string filename)
+void plink_binary::open_bed_read(std::string filename, bool quell_mem_mapping)
 {
     if ((fd = ::open(filename.c_str(), O_RDONLY)) == -1)
-        throw gftools::MalformedData("Missing bed file for " + dataset);
+        throw gftools::malformed_data("Missing bed file for " + dataset);
     fd = ::open(filename.c_str(), O_RDONLY);
 
     struct stat buf;
     if (stat(filename.c_str(), &buf) == -1)
-        throw gftools::MalformedData("Missing bed file");
+        throw gftools::malformed_data("Missing bed file");
     flen = buf.st_size;
 
-    if ((fmap = (char *)mmap(0, flen, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED) {
+    if (quell_mem_mapping || (fmap = (char *)mmap(0, flen, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED) {
         // error mem mapping - use a stream
         is_mem_mapped = 0;
         bed_file = new std::fstream();
@@ -352,30 +355,34 @@ void plink_binary::read_bed_header()
 
     for (int i = 0; i < MAGIC_LEN; i++)
         if (buffer[i] != magic_number[i])
-            throw gftools::MalformedData("Corrupt or incompatible bed file?");
+            throw gftools::malformed_data("Corrupt or incompatible bed file?");
 }
 
-void plink_binary::bed_extract(size_t pos, std::vector<int> &genotypes)
+void plink_binary::extract_bed(size_t pos, size_t len, char *buffer)
 {
-    unsigned int n_bytes = (3 + individuals.size()) / 4;
-    char *buffer = (char *)malloc(n_bytes);
-
     if (is_mem_mapped) {
-        memcpy(buffer, fmap + pos, n_bytes);
+        memcpy(buffer, fmap + pos, len);
     } else {
         bed_file->seekg(pos, std::ios_base::beg);
-        bed_file->read(buffer, n_bytes);
+        bed_file->read(buffer, len);
     }
+}
+
+void plink_binary::get_snp(size_t pos, std::vector<int> &genotypes)
+{
+    char *buffer = (char *)malloc(bytes_per_snp);
+
+    extract_bed(pos, bytes_per_snp, buffer);
     genotypes.resize(0);
-    uncompressCalls(buffer, individuals.size(), genotypes);
+    uncompress_calls(buffer, individuals.size(), genotypes);
     free(buffer);
 }
 
 void plink_binary::write_snp(gftools::snp s, std::vector<int> genotypes) {
     if (genotypes.size() == 0)
-        throw gftools::MalformedData("No genotypes defined");
+        throw gftools::malformed_data("No genotypes defined");
     if (individuals.size() == 0)
-        throw gftools::MalformedData("No individuals defined");
+        throw gftools::malformed_data("No individuals defined");
     if (genotypes.size() != individuals.size()) {
         std::stringstream ss;
         ss << "Incorrect individual count: ";
@@ -385,21 +392,23 @@ void plink_binary::write_snp(gftools::snp s, std::vector<int> genotypes) {
         ss << " whereas ";
         ss << individuals.size();
         ss << " individuals defined";
-        throw gftools::MalformedData(ss.str());
+        throw gftools::malformed_data(ss.str());
     }
     bed_write(s, genotypes);
 }
 
-void plink_binary::write_snp(gftools::snp s, std::vector<std::string> genotypes) {
+void plink_binary::write_snp(gftools::snp s, std::vector<std::string> genotypes)
+{
     std::vector<int> g_num;
     genotypes_atoi(s, genotypes, g_num);
     write_snp(s, g_num);
 }
 
-void plink_binary::bed_write(gftools::snp s, std::vector<int> genotypes) {
+void plink_binary::bed_write(gftools::snp s, std::vector<int> genotypes)
+{
     int len = (3 + individuals.size()) / 4;
     char buffer[len];
-    compressCalls(buffer, genotypes);
+    compress_calls(buffer, genotypes);
     snps.push_back(s);
     bed_file->write(buffer, len);
 }
@@ -410,7 +419,7 @@ void plink_binary::bed_write(gftools::snp s, std::vector<int> genotypes) {
 // Note that the bytes in a bed file are written in reverse order:
 // in the plink documentation a missing genotype is binary 10;
 // 01 (as above) after reversal.
-void plink_binary::uncompressCalls(char *buffer, size_t len, std::vector<int> &calls)
+void plink_binary::uncompress_calls(char *buffer, size_t len, std::vector<int> &calls)
 {
     char c = buffer[0];
     for (unsigned int i = 0; i < len; i++) {
@@ -418,25 +427,27 @@ void plink_binary::uncompressCalls(char *buffer, size_t len, std::vector<int> &c
         char d = c & 3;
         c >>= 2;
         switch(d) {
-            case 0: calls.push_back(1); break;
             case 1: calls.push_back(0); break;
             case 2: calls.push_back(2); break;
             case 3: calls.push_back(3); break;
+            case 0: calls.push_back(1); break;
         }
     }
 }
 
-void plink_binary::compressCalls(char *buffer, std::vector<int> &calls)
+void plink_binary::compress_calls(char *buffer, std::vector<int> calls)
 {
     int pos = 0;
     unsigned char c = 0;
     for (unsigned int i = 0; i < calls.size(); i++) {
         c >>= 2;
         switch(calls[i]) {
-            case 0: c |= (1 << 6); break;
-            case 1: c |= (0 << 6); break;
-            case 2: c |= (2 << 6); break;
-            case 3: c |= (3 << 6); break;
+            case 1:  c |= (0 << 6); break;
+            case 2:  c |= (2 << 6); break;
+            case 3:  c |= (3 << 6); break;
+            // treat anything else as a no call;
+            // may want to have a strict option here?
+            default: c |= (1 << 6);
         }
         // write every forth i
         if ((i % 4) == 3) {

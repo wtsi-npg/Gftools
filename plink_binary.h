@@ -13,6 +13,8 @@
 
 class plink_binary
 {
+    friend class plink_utils;
+
     private:
         bool open_for_write;
         std::fstream *bed_file;
@@ -28,16 +30,18 @@ class plink_binary
         void read_bed_header();
         void write_bed_header();
         void bed_write(gftools::snp s, std::vector<int> genotypes);
-        void uncompressCalls(char *buffer, size_t len, std::vector<int> &genotypes);
-        void compressCalls(char *buffer, std::vector<int> &genotypes);
+        void uncompress_calls(char *buffer, size_t len, std::vector<int> &genotypes);
+        void compress_calls(char *buffer, std::vector<int> genotypes);
         void open_bed_write(std::string filename);
-        void open_bed_read(std::string filename);
-        void bed_extract(size_t pos, std::vector<int> &genotypes);
+        void open_bed_read(std::string filename, bool quell_mem_mapping);
+        void get_snp(size_t pos, std::vector<int> &genotypes);
+        void extract_bed(size_t pos, size_t len, char *buffer);
         void init(std::string dataset, bool mode);
 
     public:
         std::string dataset;
         char missing_genotype;
+        bool quell_mem_mapping;
         void open(std::string dataset, bool mode);
         void open(std::string dataset);
         plink_binary(std::string dataset);
@@ -61,8 +65,8 @@ class plink_binary
         std::map<std::string, int> snp_index;
 
         bool next_snp(gftools::snp &s, std::vector<std::string> &genotypes);
-        void extract_snp(std::string snp, std::vector<std::string> &genotypes);
-        void extract_snp(int snp, std::vector<int> &genotypes);
+        void read_snp(std::string snp, std::vector<std::string> &genotypes);
+        void read_snp(int snp, std::vector<int> &genotypes);
         void write_snp(gftools::snp s, std::vector<int> genotypes);
         void write_snp(gftools::snp s, std::vector<std::string> genotypes);
         void genotypes_itoa(gftools::snp s, std::vector<int> g_num, std::vector<std::string> &g_str);
