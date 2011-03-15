@@ -1,13 +1,18 @@
+#ifndef _EXCEPTIONS_H_
+#define _EXCEPTIONS_H_
+
 #include <stdexcept>
 
 namespace gftools
 {
-    class MalformedData : public std::runtime_error
+    class malformed_data : public std::runtime_error
     {
         public:
-        MalformedData()
+        malformed_data()
             : runtime_error("Malformed data") {}
-        MalformedData(std::string info)
+        malformed_data(std::string info)
             : runtime_error(info) {}
     };
 }
+
+#endif // _EXCEPTIONS_H_
