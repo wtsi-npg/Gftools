@@ -1,5 +1,8 @@
 #include "plink_binary.h"
 #include <iostream>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <vector>
 
 /*
@@ -13,8 +16,25 @@ char *getline_unlimited(FILE *f, int ignore_cr, int strip_nl);
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-        cout << "Usage: " << argv[0] << " DATA_FILE" << endl;
+    char c;
+    string chromosome = "0";
+    char missing = 'N';
+
+    while ((c = getopt(argc, argv, "c:m:")) != -1) {
+        switch (c) {
+            case 'c':
+                chromosome = optarg;
+                break;
+            case 'm':
+                missing = *optarg;
+                break;
+        }
+    }
+
+    if (argc <= optind) {
+        cout << "Usage: " << argv[0] << " [ options ] PLINK_BINARY" << endl;
+        cout << "Options: -c  chromosome number" << endl;
+        cout << "         -m  missing genotype character (default " << missing << ")" << endl;
         return 1;
     }
 
@@ -29,15 +49,16 @@ int main(int argc, char *argv[])
         pb->individuals.push_back(ind);
     }
 
-    pb->open(argv[1], 1);
-    pb->missing_genotype = '0';
+    pb->open(argv[optind], 1);
+    pb->missing_genotype = missing;
     while ((buffer = getline_unlimited(stdin, 1, 1))) {
         line_split(buffer, data);
         gftools::snp snp;
         snp.name = data[0];
+        snp.chromosome = chromosome;
         vector<string> genotypes;
         for (unsigned int i = 1; i < data.size(); i++)
-            genotypes.push_back(data[i]);
+            genotypes.push_back(data[i].substr(0, 2));
         pb->write_snp(snp, genotypes);
     }
     pb->close();
