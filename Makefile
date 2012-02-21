@@ -1,7 +1,7 @@
 CFLAGS = -O3 -Wall -fPIC
 LIBS = libplinkutils.so libplinkbin.so
 MODULES = plink_binary.pm plink_utils.pm
-OBJS = bed_to_tped plink_binary_to_tab tab_to_plink_binary qmerge_bed
+OBJS = bed_to_tped plink_binary_to_tab tab_to_plink_binary
 TARGETS = $(OBJS) $(LIBS)
 INCLUDES = exceptions.h individual.h plink_binary.h plink_utils.h snp.h
 
@@ -23,8 +23,6 @@ tab_to_plink_binary: tab_to_plink_binary.o plink_binary.o
 	g++ tab_to_plink_binary.o plink_binary.o -o tab_to_plink_binary
 bed_to_tped: bed_to_tped.o plink_binary.o
 	g++ bed_to_tped.o plink_binary.o -o bed_to_tped
-qmerge_bed: qmerge_bed.o plink_binary.o plink_utils.o
-	g++ qmerge_bed.o plink_binary.o plink_utils.o -o qmerge_bed
 
 plink_binary.pm: plink_binary.i
 	swig -c++ -perl plink_binary.i
