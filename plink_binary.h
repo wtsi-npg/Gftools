@@ -13,8 +13,6 @@
 
 class plink_binary
 {
-    friend class plink_utils;
-
 private:
     bool open_for_write;
     std::fstream *bed_file;
