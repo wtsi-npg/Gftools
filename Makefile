@@ -5,7 +5,7 @@ OBJS = bed_to_tped plink_binary_to_tab tab_to_plink_binary
 TARGETS = $(OBJS) $(LIBS)
 INCLUDES = exceptions.h individual.h plink_binary.h snp.h
 
-PERL_CORE := $(shell perl -V:installarchlib | sed -e "s/[^\']*'\(.*\)';/\1\/CORE/")
+PERL_CORE := $(shell perl -e 'print join ":", map{ <$$_/*/CORE> } @INC')
 
 LDFLAGS =
 INSTALL_ROOT = ...
@@ -29,14 +29,13 @@ bed_to_tped: bed_to_tped.o plink_binary.o
 plink_binary.pm: plink_binary.i
 	swig -c++ -perl plink_binary.i
 	$(CC) $(CFLAGS) -c -I$(PERL_CORE) plink_binary.cpp plink_binary_wrap.cxx `perl -MExtUtils::Embed -e ccopts`
-	$(CC) $(CFLAGS) -shared plink_binary.o plink_binary_wrap.o -o plink_binary.so
+	$(CC) $(CFLAGS) -shared -L$(PERL_CORE) plink_binary.o plink_binary_wrap.o -o plink_binary.so -lperl
 
 libplinkbin.so: plink_binary.o
 	$(CC) -shared plink_binary.o -o libplinkbin.so
-	ar rcs libplinkbin.a plink_binary.o
 
 clean:
-	rm -f *.o *.a *.cxx $(TARGETS) plink_binary.pm
+	rm -f *.o *.so *.cxx $(TARGETS) plink_binary.pm
 
 install:
 	cp $(INCLUDES) $(INSTALL_INC)
