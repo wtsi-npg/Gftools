@@ -1,20 +1,19 @@
-#ifndef _INDIVIDUAL_H_
-#define _INDIVIDUAL_H_
+#ifndef INDIVIDUAL_H
+#define INDIVIDUAL_H
 
-namespace gftools
-{
+namespace gftools {
     class individual {
-        public:
-            std::string family;
-            std::string name;
-            std::string father;
-            std::string mother;
-            std::string sex;
-            std::string phenotype;
+public:
+        std::string family;
+        std::string name;
+        std::string father;
+        std::string mother;
+        std::string sex;
+        std::string phenotype;
         individual() {};
         individual(std::string family, std::string name,
-            std::string father, std::string mother,
-            std::string sex, std::string phenotype) {
+                   std::string father, std::string mother,
+                   std::string sex, std::string phenotype) {
             this->family = family;
             this->name = name;
             this->father = father;
@@ -22,8 +21,9 @@ namespace gftools
             this->sex = sex;
             this->phenotype = phenotype;
         }
+
     };
+
 }
 
-#endif // _INDIVIDUAL_H_
-
+#endif // INDIVIDUAL_H
