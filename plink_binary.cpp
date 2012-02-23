@@ -349,7 +349,7 @@ void plink_binary::write_bed_header() {
     if (is_mem_mapped) {
         memcpy(fmap, buffer, MAGIC_LEN);
     }
-    else{
+    else {
         bed_file->write(buffer, MAGIC_LEN);
     }
 }

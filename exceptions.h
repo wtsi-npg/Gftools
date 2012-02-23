@@ -4,8 +4,9 @@
 #include <stdexcept>
 
 namespace gftools {
-    class malformed_data : public std::runtime_error
-    {
+    /** An exception raised for all types of data error.
+     */
+    class malformed_data : public std::runtime_error {
 public:
         malformed_data()
             : runtime_error("Malformed data") {}

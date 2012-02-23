@@ -2,11 +2,16 @@
 #define INDIVIDUAL_H
 
 namespace gftools {
+    /** An individual whose genotype has been determined.
+     */
     class individual {
 public:
         std::string family;
+        /// An unique identifier for this individual.
         std::string name;
+        /// The identifier of the father individual.
         std::string father;
+        /// The identifier of the mother individual.
         std::string mother;
         std::string sex;
         std::string phenotype;
