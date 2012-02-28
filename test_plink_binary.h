@@ -17,13 +17,12 @@ public:
         // All these Plink files are present, but empty
         plink_binary pb = plink_binary();
         TS_ASSERT_THROWS_ANYTHING(pb.open("empty"));
-        pb.close();
     }
     
     void testOpenMissing() {
+        // This file does not exist
         plink_binary pb = plink_binary();
         TS_ASSERT_THROWS_ANYTHING(pb.open("no such dataset"));
-        pb.close();
     }
     
 //    void testOpenWrite() {

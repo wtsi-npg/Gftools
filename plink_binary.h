@@ -16,7 +16,7 @@ private:
     bool open_for_write;
     std::fstream *bed_file;
 
-    // for bed file
+    // for BED file
     bool is_mem_mapped;
     char *fmap;
     size_t flen;
@@ -43,6 +43,10 @@ private:
     void extract_bed(size_t pos, size_t len, char *buffer);
 
     void init(std::string dataset, bool mode);
+
+    bool is_empty(std::ifstream &ifstream);
+
+    std::string error_message();
 
 public:
     /// The dataset name.
