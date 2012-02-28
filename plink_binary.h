@@ -16,7 +16,7 @@ private:
     bool open_for_write;
     std::fstream *bed_file;
 
-    // for BED file
+    // for bed file
     bool is_mem_mapped;
     char *fmap;
     size_t flen;
