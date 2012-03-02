@@ -34,6 +34,12 @@ public:
             physical_position = 0;
         }
 
+        /** Returns true if both alleles of the SNP have been assigned.
+         */
+        bool is_known() {
+            return (!allele_a.empty() || !allele_b.empty());
+        }
+
     };
 
 }

@@ -1,10 +1,14 @@
 #ifndef TEST_PLINK_BINARY_H
 #define TEST_PLINK_BINARY_H
 
+#include <map>
+#include <fstream>
+#include <sstream>
 #include <stdio.h>
 #include <cxxtest/TestSuite.h>
 #include "plink_binary.h"
 
+using std::ifstream;
 using std::string;
 using std::vector;
 
@@ -12,27 +16,93 @@ using gftools::individual;
 using gftools::snp;
 
 class ReadTest : public CxxTest::TestSuite {
+
+    vector<string> expected_a;
+    vector<string> expected_b;
+    vector<string> expected_snp;
+    vector<string> expected_ind;
+    std::map<string, vector<string> > expected_gen;
+
 public:
-    void testOpen() {
+    void setUp() {
+        expected_a = vector<string>();
+        string ea[4] = {"0", "A", "A", "A"};
+        for (unsigned int i = 0; i < 4; i++) {
+            expected_a.push_back(string(ea[i]));
+        }
+
+        string eb[4] = {"0", "0", "C", "G"};
+        for (unsigned int i = 0; i < 4; i++) {
+            expected_b.push_back(string(eb[i]));
+        }
+
+        string esn[4] = {"rs1000", "rs1001", "rs1002", "rs1003"};
+        string geno[][4] = {{"00", "00", "00", "00"},
+                            {"AA", "AA", "AA", "AA"},
+                            {"AC", "CC", "AC", "CC"},
+                            {"GG", "GG", "AG", "GG"}};
+
+        expected_gen = std::map<string, vector<string> >();
+        for (unsigned int i = 0; i < 4; i++) {
+            string name = string(esn[i]);
+
+            vector<string> genotypes = vector<string>();
+            for (int j = 0; j < 4; j++) {
+                genotypes.push_back(string(geno[i][j]));
+            }
+
+            expected_snp.push_back(name);
+            expected_gen[name] = genotypes;
+        }
+
+        string eid[] = {"sample_000", "sample_001", "sample_002", "sample_003"};
+        for (unsigned int i = 0; i < 4; i++) {
+            expected_ind.push_back(string(eid[i]));
+        }
+    }
+
+    void test_open_read() {
         // Implicit open for reading
         plink_binary pb = plink_binary("data");
+        pb.missing_genotype = '0';
+
         TS_ASSERT_EQUALS(4, pb.individuals.size());
+        for (int i = 0; i < 4; i++) {
+            TS_ASSERT_EQUALS(expected_ind[i], pb.individuals[i].name);
+        }
+
+        vector<string> genotypes;
+        snp snp;
+        for (int i = 0; i < 4; i++) {
+            TS_ASSERT(pb.next_snp(snp, genotypes));
+            TS_ASSERT_EQUALS(expected_a[i], snp.allele_a);
+            TS_ASSERT_EQUALS(expected_b[i], snp.allele_b);
+
+            vector<string> expected_genotypes = expected_gen[snp.name];
+            TS_ASSERT_EQUALS(genotypes.size(), expected_genotypes.size());
+
+            for (int j = 0; j < 4; j++) {
+                TS_ASSERT_EQUALS(expected_genotypes[j], genotypes[j]);
+            }
+        }
+        TS_ASSERT(!pb.next_snp(snp, genotypes));
+
         pb.close();
     }
 
-    void testOpenEmpty() {
+    void test_open_empty() {
         // All these Plink files are present, but empty
         plink_binary pb = plink_binary();
         TS_ASSERT_THROWS_ANYTHING(pb.open("empty"));
     }
 
-    void testOpenMissing() {
+    void test_open_missing() {
         // This file does not exist
         plink_binary pb = plink_binary();
         TS_ASSERT_THROWS_ANYTHING(pb.open("no such dataset"));
     }
 
-    void testOpenWrite() {
+    void test_open_write() {
         char *tmpname = NULL;
         tmpname = tmpnam(NULL);
         if (!tmpname) {
@@ -50,7 +120,7 @@ public:
             pbo.individuals = pbi.individuals;
             pbo.snp_index = pbi.snp_index;
 
-            // Write a new BED dataset
+            // Write a new BED dataset copy
             while (pbi.next_snp(snp_in, genotypes_in)) {
                 pbo.write_snp(snp_in, genotypes_in);
             }
@@ -102,6 +172,86 @@ public:
                     TS_FAIL("Failed to remove tmp file " + fn);
                 }
             }
+        }
+    }
+
+    void test_write_snp() {
+        snp snp;
+        snp.name = "test_snp";
+        snp.allele_a = "A";
+        snp.allele_b = "C";
+
+        vector<individual> inds = vector<individual>();
+        for (int i = 0; i < 4; i++) {
+            individual ind;
+            std::stringstream name;
+            name << "sample_00" << i;
+            ind.name = name.str();
+            inds.push_back(ind);
+        }
+
+        vector<string> bad_gt = vector<string>();
+        bad_gt.push_back("GG");
+        bad_gt.push_back("AG");
+        bad_gt.push_back("GG");
+        bad_gt.push_back("GA");
+
+        vector<string> good_gt = vector<string>();
+        good_gt.push_back("AA");
+        good_gt.push_back("AC");
+        good_gt.push_back("CA");
+        good_gt.push_back("NN");
+
+        char *tmpname = NULL;
+        tmpname = tmpnam(NULL);
+        if (!tmpname) {
+            TS_FAIL("Failed to create a temporary file name");
+        }
+        else {
+            string tmpfile = string(tmpname);
+            plink_binary pb = plink_binary();
+            pb.open(tmpfile, true);
+            pb.individuals = inds;
+
+            // Should fail to write all bad genotypes
+            vector<string>::iterator i;
+            for (i = bad_gt.begin(); i < bad_gt.end(); i++) {
+                vector<string> tmp = vector<string>(1, *i);
+                TS_ASSERT_THROWS_ANYTHING(pb.write_snp(snp, tmp));
+            }
+            pb.write_snp(snp, good_gt);
+            pb.close();
+
+            // Check written genotypes
+            pb = plink_binary(tmpfile);
+            vector<string> genotypes;
+            TS_ASSERT(pb.next_snp(snp, genotypes));
+
+            vector<string> expected_gt = vector<string>();
+            expected_gt.push_back("AA");
+            expected_gt.push_back("AC");
+            expected_gt.push_back("AC"); // Note, was CA
+            expected_gt.push_back("NN");
+
+            vector<string>::iterator ie;
+            vector<string>::iterator io = genotypes.begin();
+            for (ie = expected_gt.begin(); ie < expected_gt.end(); ie++) {
+                TS_ASSERT_EQUALS(*ie, *io);
+                io++;
+            }
+            TS_ASSERT(io == genotypes.end());
+            pb.close();
+
+            // Check the SNP annotation
+            string bim = tmpfile + ".bim";
+            ifstream bim_file;
+            bim_file.open(bim.c_str(), std::fstream::in);
+            TS_ASSERT(bim_file.is_open());
+
+            string line;
+            std::getline(bim_file, line);
+            TS_ASSERT_EQUALS("0	test_snp	0	0	A	C", line);
+            bim_file.close();
         }
     }
 

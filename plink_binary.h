@@ -44,6 +44,15 @@ private:
 
     void init(std::string dataset, bool mode);
 
+    /** Collates genotype call strings to determine the alleles involved.
+     *
+     * Splits each call string to determine the alleles involved. Checks the
+     * number of alleles involved.
+     * @param g_str A vector of genotype call strings.
+     * @return A pair of allele strings, A and B.
+     */
+    std::vector<std::string> collate_alleles(const std::vector<std::string> &g_str);
+
     bool is_empty(std::ifstream &ifstream);
 
     std::string error_message();
@@ -201,7 +210,7 @@ public:
      * @see write_snp(gftools::snp s, std::vector<int> genotypes)
      *
      * @param s A snp whose data will be written.
-     * @param genotypes A vector of genotype call strings.
+     * @param genotypes A vector of genotype call strings.
      */
     void write_snp(gftools::snp s, std::vector<std::string> genotypes);
 
