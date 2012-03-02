@@ -1,10 +1,11 @@
 #ifndef TEST_PLINK_BINARY_H
 #define TEST_PLINK_BINARY_H
 
+#include <cstdio>
 #include <map>
 #include <fstream>
 #include <sstream>
-#include <stdio.h>
+
 #include <cxxtest/TestSuite.h>
 #include "plink_binary.h"
 

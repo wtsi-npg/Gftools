@@ -170,12 +170,12 @@ public:
 
     /** Decodes the next SNP and its genotype calls from BED data.
      *
-     * @param s A SNP reference that will be pointed to the next SNP.
+     * @param snp A SNP reference that will be pointed to the next SNP.
      * @param genotypes A vector of strings indicating the genotype calls
      * for the SNP.
      * @return true if there are further SNPs.
      */
-    bool next_snp(gftools::snp &s, std::vector<std::string> &genotypes);
+    bool next_snp(gftools::snp &snp, std::vector<std::string> &genotypes);
 
     /** Looks up a SNP by name and updates a vector of genotype strings to the
      * calls for that SNP.
@@ -200,19 +200,19 @@ public:
      * read_snp prior to this or data may get written at the wrong file offset.
      * This function writes at the current position in the BED data.
      *
-     * @param s A snp whose data will be written.
+     * @param snp A snp whose data will be written.
      * @param genotypes A vector of genotype call integer codes.
      */
-    void write_snp(gftools::snp s, std::vector<int> genotypes);
+    void write_snp(const gftools::snp snp, const std::vector<int> genotypes);
 
     /** Writes the data of a SNP and its corresponding genotypes into the BED data.
      *
-     * @see write_snp(gftools::snp s, std::vector<int> genotypes)
+     * @see write_snp(gftools::snp snp, std::vector<int> genotypes)
      *
-     * @param s A snp whose data will be written.
+     * @param snp A snp whose data will be written.
      * @param genotypes A vector of genotype call strings.
      */
-    void write_snp(gftools::snp s, std::vector<std::string> genotypes);
+    void write_snp(gftools::snp snp, std::vector<std::string> genotypes);
 
     /** Translates integer representations of genotype calls for one SNP to their
      * corresponding string representations.
@@ -220,12 +220,12 @@ public:
      * Essentially this is the inverse of genotypes_atoi, except that the SNP is
      * not modified.
      *
-     * @param s The SNP whose genotype strings are to be generated.
+     * @param snp The SNP whose genotype strings are to be generated.
      * @param g_num A vector of genotype call integer codes, @see genotypes_atoi.
      * @param g_str A vector of genotype call strings, updated according to
      * the integer codes.
      */
-    void genotypes_itoa(gftools::snp s, std::vector<int> g_num, std::vector<std::string> &g_str);
+    void genotypes_itoa(gftools::snp snp, const std::vector<int> g_num, std::vector<std::string> &g_str);
 
     /** Translates string representations of genotype calls for one SNP to their
      * corresponding integer representations and updates the alleles of the SNP.
@@ -242,15 +242,13 @@ public:
      *  - BA: 2
      *  - BB: 3
      *
-     * The alleles of the SNP are not updated if there is a no-call.
-     *
-     * @param s The SNP whose alleles may be modified.
+     * @param snp A SNP whose calls these are.
      * @param g_str A vector of integers, updated according to the genptype calls
      * strings.
      * @param g_num A vector of genotype call strings for the SNP, each allele
      * being a single character.
      */
-    void genotypes_atoi(gftools::snp &s, std::vector<std::string> g_str, std::vector<int> &g_num);
+    void genotypes_atoi(gftools::snp &snp, const std::vector<std::string> g_str, std::vector<int> &g_num);
 
 };
 
