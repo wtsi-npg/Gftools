@@ -1,5 +1,5 @@
-#ifndef EXCEPTIONS_H
-#define EXCEPTIONS_H
+#ifndef GFTOOLS_EXCEPTIONS_H
+#define GFTOOLS_EXCEPTIONS_H
 
 #include <stdexcept>
 
@@ -16,4 +16,4 @@ public:
 
 }
 
-#endif // EXCEPTIONS_H
+#endif // GFTOOLS_EXCEPTIONS_H

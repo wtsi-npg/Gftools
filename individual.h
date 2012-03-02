@@ -1,5 +1,5 @@
-#ifndef INDIVIDUAL_H
-#define INDIVIDUAL_H
+#ifndef GFTOOLS_INDIVIDUAL_H
+#define GFTOOLS_INDIVIDUAL_H
 
 namespace gftools {
     /** An individual whose genotype has been determined.
@@ -31,4 +31,4 @@ public:
 
 }
 
-#endif // INDIVIDUAL_H
+#endif // GFTOOLS_INDIVIDUAL_H

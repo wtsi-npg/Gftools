@@ -1,5 +1,5 @@
-#ifndef PLINK_BIN
-#define PLINK_BIN
+#ifndef GFTOOLS_PLINK_BIN
+#define GFTOOLS_PLINK_BIN
 
 #include <string>
 #include <vector>
@@ -254,4 +254,4 @@ public:
 
 };
 
-#endif // PLINK_BIN
+#endif // GFTOOLS_PLINK_BIN

@@ -1,5 +1,5 @@
-#ifndef SNP_H
-#define SNP_H
+#ifndef GFTOOLS_SNP_H
+#define GFTOOLS_SNP_H
 
 namespace gftools {
     /** A SNP.
@@ -44,4 +44,4 @@ public:
 
 }
 
-#endif // SNP_H
+#endif // GFTOOLS_SNP_H
