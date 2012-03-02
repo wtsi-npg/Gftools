@@ -1,7 +1,7 @@
-#include "plink_binary.h"
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -13,6 +13,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "utilities.h"
+#include "plink_binary.h"
+
 using std::fstream;
 using std::ifstream;
 using std::ofstream;
@@ -22,6 +25,8 @@ using std::vector;
 
 using gftools::individual;
 using gftools::snp;
+using gftools::error_message;
+using gftools::at_eof;
 
 // final '1' for snp major mode; only supporting this at present
 #define MAGIC_LEN 3
@@ -102,10 +107,6 @@ void plink_binary::init(string dataset, bool mode) {
         bytes_per_snp = (3 + individuals.size()) / 4;
         open_bed_read(dataset + ".bed", quell_mem_mapping);
     }
-}
-
-bool plink_binary::is_empty(ifstream &ifstream) {
-    return ifstream.peek() == ifstream::traits_type::eof();
 }
 
 bool plink_binary::next_snp(snp &snp, vector<string> &genotypes) {
@@ -314,7 +315,7 @@ void plink_binary::read_bim(vector<snp> &snps) {
                                       ": " + error_message());
     }
     else {
-        if (is_empty(file)) {
+        if (at_eof(file)) {
             throw gftools::malformed_data("Empty BIM file for " + dataset);
         }
     }
@@ -552,10 +553,4 @@ void plink_binary::compress_calls(char *buffer, vector<int> calls) {
         }
         buffer[pos] = c;
     }
-}
-
-string plink_binary::error_message() {
-    char *msg  = strerror(errno);
-
-    return msg ? string(msg) : "unknown error";
 }

@@ -16,7 +16,7 @@ private:
     bool open_for_write;
     std::fstream *bed_file;
 
-    // for bed file
+    // for BED file
     bool is_mem_mapped;
     char *fmap;
     size_t flen;
@@ -28,7 +28,7 @@ private:
 
     void write_bed_header();
 
-    void bed_write(gftools::snp s, std::vector<int> genotypes);
+    void bed_write(gftools::snp snp, std::vector<int> genotypes);
 
     void uncompress_calls(char *buffer, size_t len, std::vector<int> &genotypes);
 
@@ -54,8 +54,6 @@ private:
     std::vector<std::string> collate_alleles(const std::vector<std::string> &g_str);
 
     bool is_empty(std::ifstream &ifstream);
-
-    std::string error_message();
 
 public:
     /// The dataset name.
@@ -233,7 +231,8 @@ public:
      * The character '0' is reserved to mean no-call in the string
      * representation, otherwise the character used to represent each allele is
      * unimportant. However, if more than two alleles are called, an error will
-     * be raised.
+     * be raised. If either called allele is in disagreement with the expected
+     * alleles of the SNP, and error will be raised.
      *
      * The integer codes created for each genotype are:
      *
