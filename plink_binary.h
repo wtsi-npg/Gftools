@@ -267,7 +267,6 @@ public:
      * being a single character.
      */
     void genotypes_atoi(gftools::snp &snp, const std::vector<std::string> g_str, std::vector<int> &g_num);
-
 };
 
 #endif // GFTOOLS_PLINK_BIN
