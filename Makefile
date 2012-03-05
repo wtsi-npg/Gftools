@@ -9,7 +9,7 @@ MODULES = plink_binary.pm
 OBJS = bed_to_tped plink_binary_to_tab tab_to_plink_binary
 TARGETS = $(OBJS) $(LIBS)
 INCLUDES = utilities.h exceptions.h individual.h plink_binary.h snp.h
-CXXTEST_ROOT = /usr/local/lib/cxxtest
+CXXTEST_ROOT := /usr/local/lib/cxxtest
 
 PERL_CORE = $(shell perl -e 'print join ":", map{ <$$_/*/CORE> } @INC')
 
@@ -48,11 +48,11 @@ $(LIB): utilities.o plink_binary.o
 runner.cpp: test_plink_binary.h
 	$(CXXTEST_ROOT)/bin/cxxtestgen -o $@ --error-printer $^
 
-runner: runner.cpp libplinkbin.so
+runner: runner.cpp $(LIB)
 	$(CC) -Wall -g -I$(CXXTEST_ROOT) $(LDFLAGS) $(LIBPATH) $^ -o $@
 
 test: runner
-	./runner
+	LD_LIBRARY_PATH=. ./runner
 
 clean:
 	rm -f *.o *.so *.cxx $(TARGETS) plink_binary.pm
