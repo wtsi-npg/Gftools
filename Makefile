@@ -17,8 +17,9 @@ INSTALL_BIN = $(INSTALL_ROOT)/bin
 
 CXX = g++
 CXXFLAGS = -O3 -Wall -fPIC
+AR = ar
 LIBPATH = -L./
-LDFLAGS = -lplinkbin $(LIBPATH)
+LDFLAGS = $(LIBPATH) -lplinkbin
 
 .PHONY: test clean
 
@@ -28,11 +29,11 @@ LDFLAGS = -lplinkbin $(LIBPATH)
 all: $(TARGETS) $(MODULES)
 
 plink_binary_to_tab: plink_binary_to_tab.o libplinkbin.so
-	$(CXX) $(LDFLAGS) $^ -o $@
+	$(CXX) $< $(LDFLAGS) -o $@
 tab_to_plink_binary: tab_to_plink_binary.o libplinkbin.so
-	$(CXX) $(LDFLAGS) $^ -o $@
+	$(CXX) $< $(LDFLAGS) -o $@
 bed_to_tped: bed_to_tped.o libplinkbin.so
-	$(CXX) $(LDFLAGS) $^ -o $@
+	$(CXX) $< $(LDFLAGS) -o $@
 
 plink_binary.pm: plink_binary.i
 	swig -c++ -perl plink_binary.i
@@ -43,13 +44,13 @@ libplinkbin.so: utilities.o plink_binary.o
 	$(CXX) -shared utilities.o plink_binary.o -o $@
 
 libplinkbin.a: utilities.o plink_binary.o
-	libtool -static -o $@ $^
+	$(AR) rcs $@ $^
 
 runner.cpp: test_plink_binary.h
 	$(CXXTEST_ROOT)/bin/cxxtestgen -o $@ --error-printer $^
 
 runner: runner.cpp libplinkbin.so
-	$(CXX) -Wall -g -I$(CXXTEST_ROOT) $(LDFLAGS) $^ -o $@
+	$(CXX) -Wall -g -I$(CXXTEST_ROOT) $< $(LDFLAGS) -o $@
 
 test: runner
 	LD_LIBRARY_PATH=. ./runner
