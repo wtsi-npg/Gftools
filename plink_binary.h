@@ -63,16 +63,9 @@ private:
 
     void init(std::string dataset, bool mode);
 
-    /** Collates genotype call strings to determine the alleles involved.
-     *
-     * Splits each call string to determine the alleles involved. Checks the
-     * number of alleles involved.
-     * @param g_str A vector of genotype call strings.
-     * @return A pair of allele strings, A and B.
-     */
-    std::vector<std::string> collate_alleles(const std::vector<std::string> &g_str);
-
     bool is_empty(std::ifstream &ifstream);
+
+    std::string call_str(const std::vector<std::string> &calls);
 
 public:
     /// The dataset name.
@@ -267,6 +260,15 @@ public:
      * being a single character.
      */
     void genotypes_atoi(gftools::snp &snp, const std::vector<std::string> g_str, std::vector<int> &g_num);
+
+    /** Collates genotype call strings to determine the alleles involved.
+     *
+     * Splits each call string to determine the alleles involved. Checks the
+     * number of alleles involved.
+     * @param g_str A vector of genotype call strings.
+     * @return A pair of allele strings, A and B.
+     */
+    std::vector<std::string> collate_alleles(const std::vector<std::string> &g_str);
 };
 
 #endif // GFTOOLS_PLINK_BIN

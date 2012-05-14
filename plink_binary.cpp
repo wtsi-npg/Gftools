@@ -53,10 +53,14 @@ static int magic_number[MAGIC_LEN] = { 108, 27, 1 };
 
 const char DEFAULT_MISSING_ALLELE = 'N';
 
-plink_binary::plink_binary(void)
-{}
+plink_binary::plink_binary(void) {
+    // default "NN" for no call
+    missing_genotype = DEFAULT_MISSING_ALLELE;
+}
 
 plink_binary::plink_binary(string dataset) {
+    // default "NN" for no call
+    missing_genotype = DEFAULT_MISSING_ALLELE;
     // single argument: open as read (default)
     plink_binary::open(dataset);
 }
@@ -106,8 +110,6 @@ void plink_binary::open(string dataset, bool mode) {
 
 void plink_binary::init(string dataset, bool mode) {
     this->dataset = dataset;
-    // default "NN" for no call
-    missing_genotype = DEFAULT_MISSING_ALLELE;
     quell_mem_mapping = false;
     if (mode) {
         open_for_write = 1;
@@ -198,64 +200,79 @@ void plink_binary::genotypes_atoi(gftools::snp &snp, const vector<string> g_str,
 }
 
 vector<string> plink_binary::collate_alleles(const vector<string> &g_str) {
-    std::set<string> allele_a;
-    std::set<string> allele_b;
-    std::set<string> allele_ab;
-    string missing = string(1, missing_genotype);
+    vector<string> alleles;
 
-    vector<string>::const_iterator gi;
-    for (gi = g_str.begin(); gi < g_str.end(); gi++) {
-        string call = *gi;
+    if (!g_str.empty()) {
+        string allele_a = "0";
+        string allele_b = "0";
+        std::set<string> alleles_ab;
+        string missing = string(1, missing_genotype);
 
-        if (call.length() == 2) {
-            string a = call.substr(0, 1);
-            string b = call.substr(1, 2);
+        vector<string>::const_iterator gi;
+        for (gi = g_str.begin(); gi < g_str.end(); gi++) {
+            string call = *gi;
 
-            if (a != missing) {
-                allele_a.insert(a);
-                allele_ab.insert(a);
+            if (call.length() == 2) {
+                string a = call.substr(0, 1);
+                string b = call.substr(1, 2);
+
+                if (a != missing) {
+                    if (allele_a == "0") {
+                        allele_a = a;
+                    }
+                    else if (allele_a != a && allele_a != allele_b && a != b) {
+                        throw gftools::malformed_data("Ambiguous allele A in " +
+                                                      call + " of " +
+                                                      call_str(g_str));
+                    }
+                    alleles_ab.insert(a);
+                }
+
+                if (b != missing) {
+                    if (allele_b == "0") {
+                        allele_b = b;
+                    }
+                    else if (allele_b != b && allele_a != allele_b && a != b) {
+                        throw gftools::malformed_data("Ambiguous allele B in " +
+                                                      call + " of " +
+                                                      call_str(g_str));
+                    }
+                    alleles_ab.insert(b);
+                }
             }
-            if (b != missing) {
-                allele_b.insert(b);
-                allele_ab.insert(b);
+            else {
+                throw gftools::malformed_data("Unrecognised genotype " + call);
             }
+        }
+
+        if (alleles_ab.size() > 2) {
+             std::stringstream ss;
+             ss << "[";
+
+             std::set<string>::const_iterator ai;
+             for (ai = alleles_ab.begin(); ai != alleles_ab.end(); ai++) {
+               if (ai != alleles_ab.begin()) {
+                 ss << ", ";
+               }
+               ss << *ai;
+             }
+             ss << "]";
+
+            throw gftools::malformed_data("Collated genotype was not bi-allelic: " +
+                                          ss.str());
+        }
+
+        alleles.push_back(allele_a);
+
+        // This seems arbitrary. If you have only homozygous calls,
+        // how do you know whether this is allele A or B, without
+        // reference to the annotation? I'm copying the implementation
+        // in the original code, but I
+        if (alleles_ab.size() == 1) {
+            alleles.push_back("0");
         }
         else {
-            throw gftools::malformed_data("Unrecognised genotype " + call);
-        }
-    }
-
-    if (allele_ab.size() > 3) {
-        std::stringstream ss;
-        ss << "[";
-        for (gi = g_str.begin(); gi < g_str.end(); gi++) {
-            if (gi != g_str.begin()) {
-                ss << ", ";
-            }
-            ss << *gi;
-        }
-        ss << "]";
-
-        throw gftools::malformed_data("Collated genotype was not bi-allelic: " +
-                                      ss.str());
-    }
-
-    vector<string> alleles;
-    std::set<string>::iterator it;
-    if (allele_a.empty()) {
-        alleles.push_back(missing);
-    }
-    else {
-        for (it = allele_a.begin(); it != allele_a.end(); it++) {
-            alleles.push_back(*it);
-        }
-    }
-    if (allele_b.empty()) {
-        alleles.push_back(missing);
-    }
-    else {
-        for (it = allele_b.begin(); it != allele_b.end(); it++) {
-            alleles.push_back(*it);
+            alleles.push_back(allele_b);
         }
     }
 
@@ -572,4 +589,21 @@ void plink_binary::compress_calls(char *buffer, vector<int> calls) {
         }
         buffer[pos] = c;
     }
+
+}
+
+string plink_binary::call_str(const vector<string> &g_str) {
+    std::stringstream ss;
+    ss << "[";
+
+    vector<string>::const_iterator gi;
+    for (gi = g_str.begin(); gi < g_str.end(); gi++) {
+        if (gi != g_str.begin()) {
+            ss << ", ";
+        }
+        ss << *gi;
+    }
+    ss << "]";
+
+    return ss.str();
 }

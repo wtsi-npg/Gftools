@@ -275,6 +275,64 @@ public:
         }
     }
 
+    void test_collate_alleles() {
+      plink_binary pb = plink_binary("data");
+      vector<string> genotype_calls;
+      vector<string> collated;
+
+      // Single call string
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("AC");
+      collated = pb.collate_alleles(genotype_calls);
+      TS_ASSERT_EQUALS(2, collated.size());
+      TS_ASSERT_EQUALS("A", collated[0]);
+      TS_ASSERT_EQUALS("C", collated[1]);
+
+      // All calls
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("AC");
+      genotype_calls.push_back("AA");
+      genotype_calls.push_back("CC");
+      genotype_calls.push_back("NN");
+      collated = pb.collate_alleles(genotype_calls);
+      TS_ASSERT_EQUALS(2, collated.size());
+      TS_ASSERT_EQUALS("A", collated[0]);
+      TS_ASSERT_EQUALS("C", collated[1]);
+
+      // All calls, only homozygous
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("AA");
+      genotype_calls.push_back("AA");
+      genotype_calls.push_back("AA");
+      collated = pb.collate_alleles(genotype_calls);
+      TS_ASSERT_EQUALS(2, collated.size());
+
+      // The original code arbitrarily inserted an unknown (here "O")
+      // for the allele that didn't get called. There's no guarantee
+      // that this really is allele B of the SNP..
+      TS_ASSERT_EQUALS("A", collated[0]);
+      TS_ASSERT_EQUALS("0", collated[1]);
+
+      // No calls
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("NN");
+      genotype_calls.push_back("NN");
+      collated = pb.collate_alleles(genotype_calls);
+      TS_ASSERT_EQUALS(2, collated.size());
+      TS_ASSERT_EQUALS("0", collated[0]);
+      TS_ASSERT_EQUALS("0", collated[1]);
+
+      // Call string too long
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("ACT");
+      TS_ASSERT_THROWS_ANYTHING(pb.collate_alleles(genotype_calls));
+
+      // Too many alleles
+      genotype_calls = vector<string>();
+      genotype_calls.push_back("AC");
+      genotype_calls.push_back("AT");
+      TS_ASSERT_THROWS_ANYTHING(pb.collate_alleles(genotype_calls));
+    }
 };
 
 #endif
