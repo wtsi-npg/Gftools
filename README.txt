@@ -2,6 +2,10 @@
 This is a development fork of the gftools library. The repository at
 http://gftools.sourceforge.net/ is no longer maintained by the author.
 
+Installation:
+make install PREFIX=<install-directory>
+
+
 Gftools requires the Plink software package.
 See http://pngu.mgh.harvard.edu/~purcell/plink/
 
