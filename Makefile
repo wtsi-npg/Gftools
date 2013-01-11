@@ -10,10 +10,10 @@ CXXTEST_ROOT := /usr/local/lib/cxxtest
 
 PERL_CORE = $(shell perl -e 'print join ":", map{ <$$_/*/CORE> } @INC')
 
-INSTALL_ROOT = ...
-INSTALL_INC = $(INSTALL_ROOT)/include
-INSTALL_LIB = $(INSTALL_ROOT)/lib
-INSTALL_BIN = $(INSTALL_ROOT)/bin
+PREFIX = /usr/local/gftools
+INSTALL_INC = $(PREFIX)/include
+INSTALL_LIB = $(PREFIX)/lib
+INSTALL_BIN = $(PREFIX)/bin
 
 CXX = g++
 CXXFLAGS = -O3 -Wall -fPIC
@@ -21,7 +21,7 @@ AR = ar
 LIBPATH = -L./
 LDFLAGS = $(LIBPATH) -lplinkbin
 
-.PHONY: test clean
+.PHONY: test clean install 
 
 %.o : %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
@@ -59,8 +59,10 @@ clean:
 	rm -f *.o *.a *.so *.cxx $(TARGETS) plink_binary.pm
 
 install: all
-	cp $(INCLUDES) $(INSTALL_INC)
-	cp $(LIBS) $(INSTALL_LIB)
-	cp $(MODULES:pm=so) $(INSTALL_LIB)
-	cp $(MODULES) $(INSTALL_LIB)
-	cp $(EXECUTABLES) $(INSTALL_BIN)
+	@echo "Installing to "$(PREFIX)
+	install -d $(INSTALL_INC) $(INSTALL_LIB) $(INSTALL_BIN)
+	install $(INCLUDES) $(INSTALL_INC)
+	install $(LIBS) $(INSTALL_LIB)
+	install $(MODULES:pm=so) $(INSTALL_LIB)
+	install $(MODULES) $(INSTALL_LIB)
+	install $(EXECUTABLES) $(INSTALL_BIN)
