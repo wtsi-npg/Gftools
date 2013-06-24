@@ -2,13 +2,11 @@
 LIB_VERSION = $(shell grep '[[:digit:]].[[:digit:]].[[:digit:]]' VERSION)
 
 MODULES = plink_binary.pm
-EXECUTABLES = bed_to_tped plink_binary_to_tab tab_to_plink_binary
+EXECUTABLES = bed_to_tped plink_binary_to_tab tab_to_plink_binary snp_af_sample_cr_bed pairwise_concordance_bed
 LIBS = libplinkbin.so libplinkbin.a
 TARGETS = $(EXECUTABLES) $(LIBS)
 INCLUDES = utilities.h exceptions.h individual.h plink_binary.h snp.h
-CXXTEST_ROOT := /usr/local/lib/cxxtest
-
-PERL_CORE = $(shell perl -e 'print join ":", map{ <$$_/*/CORE> } @INC')
+CXXTEST_ROOT ?= /usr/local/lib/cxxtest
 
 PREFIX = /usr/local/gftools
 INSTALL_INC = $(PREFIX)/include
@@ -34,11 +32,16 @@ tab_to_plink_binary: tab_to_plink_binary.o libplinkbin.so
 	$(CXX) $< $(LDFLAGS) -o $@
 bed_to_tped: bed_to_tped.o libplinkbin.so
 	$(CXX) $< $(LDFLAGS) -o $@
+snp_af_sample_cr_bed: snp_af_sample_cr_bed.o libplinkbin.so
+	$(CXX) $< $(LDFLAGS) -o $@
+
+pairwise_concordance_bed: pairwise_concordance_bed.o
+	$(CXX) $< $(LDFLAGS) -o $@
 
 plink_binary.pm: plink_binary.i
 	swig -c++ -perl plink_binary.i
-	$(CXX) $(CXXFLAGS) -c -I$(PERL_CORE) plink_binary.cpp plink_binary_wrap.cxx `perl -MExtUtils::Embed -e ccopts`
-	$(CXX) $(CXXFLAGS) -shared -L$(PERL_CORE) utilities.o plink_binary.o plink_binary_wrap.o -o plink_binary.so -lperl
+	$(CXX) $(CXXFLAGS) -c plink_binary.cpp plink_binary_wrap.cxx `perl -MExtUtils::Embed -e ccopts`
+	$(CXX) $(CXXFLAGS) -shared `perl -MExtUtils::Embed -e ldopts` utilities.o plink_binary.o plink_binary_wrap.o -o plink_binary.so
 
 libplinkbin.so: utilities.o plink_binary.o
 	$(CXX) -shared utilities.o plink_binary.o -o $@

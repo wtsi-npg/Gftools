@@ -1,9 +1,11 @@
 #include "plink_binary.h"
 #include <iostream>
+#include <vector>
+#include <cstdio>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <vector>
+
 
 /*
  * Construct a binary ped file from genotype data in a matrix format
