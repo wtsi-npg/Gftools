@@ -6,7 +6,7 @@ EXECUTABLES = bed_to_tped plink_binary_to_tab tab_to_plink_binary snp_af_sample_
 LIBS = libplinkbin.so libplinkbin.a
 TARGETS = $(EXECUTABLES) $(LIBS)
 INCLUDES = utilities.h exceptions.h individual.h plink_binary.h snp.h
-CXXTEST_ROOT := /usr/local/lib/cxxtest
+CXXTEST_ROOT ?= /usr/local/lib/cxxtest
 
 INSTALL_ROOT = ...
 INSTALL_INC = $(INSTALL_ROOT)/include
