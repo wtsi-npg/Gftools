@@ -518,7 +518,7 @@ void plink_binary::write_snp(snp snp, const vector<int> genotypes) {
         ss << snp.name;
         ss << " whereas ";
         ss << individuals.size();
-        ss << " individuals defined";
+        ss << " individuals defined.";
         throw gftools::malformed_data(ss.str());
     }
     bed_write(snp, genotypes);
