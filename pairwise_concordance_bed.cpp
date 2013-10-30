@@ -85,6 +85,7 @@ int main (int argc, char *argv[])
 
     int n_samples = samples.size();
     int n_pairs = n_samples * (n_samples - 1) / 2;
+
     vector <unsigned short> checked_for_pair, matched_for_pair;
     checked_for_pair.resize(n_pairs);
     matched_for_pair.resize(n_pairs);
@@ -106,11 +107,14 @@ int main (int argc, char *argv[])
         int pair = 0;
         for (int ind_1 = 0; ind_1 < n_samples; ind_1++) {
             for (int ind_2 = 1 + ind_1; ind_2 < n_samples; ind_2++) {
-                pair++;
                 if (genotypes[ind_1] && genotypes[ind_2]) {
                     checked_for_pair[pair]++;
-                    if (genotypes[ind_1] == genotypes[ind_2]) matched_for_pair[pair]++;
+                    if (genotypes[ind_1] == genotypes[ind_2]){
+                      matched_for_pair[pair]++;
+                    }
                 }
+
+                pair++;
             }
         }
     }
@@ -118,7 +122,6 @@ int main (int argc, char *argv[])
     int pair = 0;
     for (int ind_1 = 0; ind_1 < n_samples; ind_1++) {
         for (int ind_2 = 1 + ind_1; ind_2 < n_samples; ind_2++) {
-            pair++;
             float match = (float)matched_for_pair[pair] / checked_for_pair[pair];
             stringstream match_str;
             match_str << fixed;
@@ -133,6 +136,8 @@ int main (int argc, char *argv[])
             } else {
                 out_full << "0\t" << match_str.str();
             }
+
+            pair++;
         }
     }
 
